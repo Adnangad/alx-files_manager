@@ -45,23 +45,52 @@ class DBClient {
       throw error;
     }
   }
+
   async findUserbymail(email) {
     try {
       const db = this.client.db(this.db);
       const collection = db.collection('users');
-      const user = await collection.findOne({email: `${email}`});
+      const user = await collection.findOne({ email: `${email}` });
       return user;
     } catch (error) {
       throw error;
     }
   }
+
   async insertUser(email, password) {
     try {
       const db = this.client.db(this.db);
       const collection = db.collection('users');
-      const doc = {email: email, password: password};
+      const doc = { email, password };
       const result = await collection.insertOne(doc);
       return result.insertedId;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async findUsers() {
+    try {
+      const db = this.client.db(this.db);
+      const collection = db.collection('users');
+      const rez = await collection.find({});
+      const docs = await rez.toArray();
+      return docs;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async delUser(email) {
+    try {
+      const db = this.client.db(this.db);
+      const collection = db.collection('users');
+      const rez = await collection.deleteOne({ email });
+      if (rez.acknowledged) {
+        return 1;
+      }
+
+      return 0;
     } catch (error) {
       throw error;
     }
