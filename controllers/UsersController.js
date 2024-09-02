@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 import dbClient from '../utils/db';
+import redisClient from '../utils/redis';
 
 function hashPassword(password) {
   const sha1hash = crypto.createHash('sha1');
@@ -28,4 +29,20 @@ exports.postNew = async (req, res) => {
   } else {
     res.status(400).json({ error: 'Already exist' });
   }
+};
+exports.getMe = async (req, res) => {
+  const users = await dbClient.findUsers();
+  const tokenheader = req.headers['x-token'];
+  if (!tokenheader) {
+    res.status(401).json({ message: 'Unauthorized' });
+  }
+  const key = `auth_${tokenheader}`;
+  const userId = await redisClient.get(key);
+  console.log(`User id is ${userId}`);
+  console.log(typeof (userId));
+  if (userId === null) {
+    return res.status(401).json({ message: 'Unauthorized' });
+  }
+  const person = users.find((user) => user._id.toString() === userId);
+  return res.json({ id: person._id, email: person.email });
 };
