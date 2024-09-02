@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import dbClient from '../utils/db';
 import redisClient from '../utils/redis';
+import { error } from 'console';
 
 function hashPassword(password) {
   const sha1hash = crypto.createHash('sha1');
@@ -41,7 +42,7 @@ exports.getMe = async (req, res) => {
   console.log(`User id is ${userId}`);
   console.log(typeof (userId));
   if (userId === null) {
-    return res.status(401).json({ message: 'Unauthorized' });
+    return res.status(401).json({ error: 'Unauthorized' });
   }
   const person = users.find((user) => user._id.toString() === userId);
   return res.json({ id: person._id, email: person.email });
