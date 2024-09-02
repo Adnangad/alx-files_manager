@@ -62,8 +62,8 @@ exports.postUpload = async (req, res) => {
       parentId,
       localPath,
     };
-    const newFileId = dbClient.createFile(filedoc);
-    const newFile = dbClient.findFile({ _id: newFileId });
+    const newFileId = await dbClient.createFile(filedoc);
+    const newFile = await dbClient.findFile({ _id: newFileId });
     res.status(201).json(newFile);
   }
 };
