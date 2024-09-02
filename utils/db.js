@@ -25,141 +25,112 @@ class DBClient {
   }
 
   async nbUsers() {
-    try {
-      const db = this.client.db(this.db);
-      const collection = db.collection('users');
-      const count = await collection.countDocuments();
-      return count;
-    } catch (error) {
-      console.log('cannot get');
-    }
+    const db = this.client.db(this.db);
+    const collection = db.collection('users');
+    const count = await collection.countDocuments();
+    return count;
   }
 
   async nbFiles() {
-    try {
-      const db = this.client.db(this.db);
-      const collection = db.collection('files');
-      const count = await collection.countDocuments();
-      return count;
-    } catch (error) {
-      throw error;
-    }
+    const db = this.client.db(this.db);
+    const collection = db.collection('files');
+    const count = await collection.countDocuments();
+    return count;
   }
 
   async findUserbymail(email) {
-    try {
-      const db = this.client.db(this.db);
-      const collection = db.collection('users');
-      const user = await collection.findOne({ email: `${email}` });
-      return user;
-    } catch (error) {
-      throw error;
-    }
+    const db = this.client.db(this.db);
+    const collection = db.collection('users');
+    const user = await collection.findOne({ email: `${email}` });
+    return user;
   }
 
   async insertUser(email, password) {
-    try {
-      const db = this.client.db(this.db);
-      const collection = db.collection('users');
-      const doc = { email, password };
-      const result = await collection.insertOne(doc);
-      return result.insertedId;
-    } catch (error) {
-      throw error;
-    }
+    const db = this.client.db(this.db);
+    const collection = db.collection('users');
+    const doc = { email, password };
+    const result = await collection.insertOne(doc);
+    return result.insertedId;
   }
 
   async findUsers() {
-    try {
-      const db = this.client.db(this.db);
-      const collection = db.collection('users');
-      const rez = await collection.find({});
-      const docs = await rez.toArray();
-      return docs;
-    } catch (error) {
-      throw error;
-    }
+    const db = this.client.db(this.db);
+    const collection = db.collection('users');
+    const rez = await collection.find({});
+    const docs = await rez.toArray();
+    return docs;
   }
 
   async delUser(email) {
     try {
       const db = this.client.db(this.db);
       const collection = db.collection('users');
-      const rez = await collection.deleteOne({ email });
-      if (rez.acknowledged) {
-        return 1;
-      }
+      await collection.deleteOne({ email });
+    } catch (error) {
+      console.error(error);
+      throw new Error('could not delete user');
+    }
+  }
 
-      return 0;
-    } catch (error) {
-      throw error;
-    }
-  }
   async findAllFiles() {
-    try {
-      const db = this.client.db(this.db);
-      const collection = db.collection('files');
-      const rez = await collection.find({});
-      const docs = await rez.toArray();
-      return docs;
-    } catch (error) {
-      throw error;
-    }
+    const db = this.client.db(this.db);
+    const collection = db.collection('files');
+    const rez = await collection.find({});
+    const docs = await rez.toArray();
+    return docs;
   }
+
   async findFilebyParent(parentId) {
-    try {
-      const db = this.client.db(this.db);
-      const collection = db.collection('files');
-      const rez = await collection.findOne({parentId: parentId});
-      return rez;
-    } catch (error) {
-      throw error;
-    } 
+    const db = this.client.db(this.db);
+    const collection = db.collection('files');
+    const rez = await collection.findOne({ parentId });
+    return rez;
   }
+
   async findFile(filters) {
     const db = this.client.db(this.db);
     const collection = db.collection('files');
     const rez = await collection.findOne(filters);
     return rez;
   }
+
   async addFolderFile(name, type, parentId, isPublic) {
-    try {
-      const db = this.client.db(this.db);
-      const collection = db.collection('files');
-      const rez = await collection.insertOne({name: name, type: type, isPublic: isPublic, parentId: parentId});
-      return rez.insertedId;
-    } catch (error) {
-      throw error;
-    }
+    const db = this.client.db(this.db);
+    const collection = db.collection('files');
+    const rez = await collection.insertOne({
+      name, type, isPublic, parentId,
+    });
+    return rez.insertedId;
   }
+
   async addUserId(parentId, userId) {
     try {
       const db = this.client.db(this.db);
       const collection = db.collection('files');
-      const filter = { parentId: parentId };
-      const updated = { $set: { userId: userId}}
+      const filter = { parentId };
+      const updated = { $set: { userId } };
       await collection.updateOne(filter, updated);
     } catch (error) {
-      throw error;
+      console.error(error);
+      throw new Error('could not update user');
     }
   }
+
   async createFile(document) {
-    try {
-      const db = this.client.db(this.db);
-      const collection = db.collection('files');
-      const newFile = await collection.insertOne(document);
-      return newFile.insertedId;
-    } catch (error) {
-      throw error;
-    }
+    const db = this.client.db(this.db);
+    const collection = db.collection('files');
+    const newFile = await collection.insertOne(document);
+    return newFile.insertedId;
   }
+
   async delFiles(parentId) {
     try {
       const db = this.client.db(this.db);
       const collection = db.collection('files');
-      await collection.deleteMany({ parentId: parentId });
+      await collection.deleteMany({ parentId });
     } catch (error) {
-      throw error;
+      console.error(error);
+      throw new Error('could not delete file');
     }
   }
 }

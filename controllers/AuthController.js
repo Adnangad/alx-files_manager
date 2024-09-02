@@ -1,7 +1,6 @@
 import crypto from 'crypto';
 import dbClient from '../utils/db';
 import redisClient from '../utils/redis';
-import { error } from 'console';
 
 const { v4: uuidv4 } = require('uuid');
 

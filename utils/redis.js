@@ -1,4 +1,3 @@
-import { error } from 'console';
 import { createClient } from 'redis';
 import { promisify } from 'util';
 
