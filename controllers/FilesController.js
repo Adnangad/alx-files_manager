@@ -3,6 +3,7 @@ import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import redisClient from '../utils/redis';
 import dbClient from '../utils/db';
+import { ObjectId } from 'mongodb';
 
 exports.postUpload = async (req, res) => {
   const token = req.headers['x-token'];
@@ -28,10 +29,9 @@ exports.postUpload = async (req, res) => {
   if (!data && type !== 'folder') {
     res.status(400).json({ error: 'Missing data' });
   }
-  if (parentId !== 0) {
+  if ((parentId !== 0) && (parentId !== '0')) {
     const file = await dbClient.findFilebyParent(parentId);
-    console.log(file);
-    if (file === null) {
+    if (!file) {
       res.status(400).json({ error: 'Parent not found' });
     }
     if (file.type !== 'folder') {
@@ -55,14 +55,15 @@ exports.postUpload = async (req, res) => {
     const fileBuff = Buffer.from(data, 'base64');
     fs.writeFileSync(filpath, fileBuff);
     const filedoc = {
-      userId,
+      userId: ObjectId(userId),
       name,
       type,
       isPublic,
       parentId,
-      localPath: filpath,
+      localPath,
     };
-    const newFile = dbClient.createFile(filedoc);
+    const newFileId = dbClient.createFile(filedoc);
+    const newFile = dbClient.findFile({ _id: newFileId });
     res.status(201).json(newFile);
   }
 };
