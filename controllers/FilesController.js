@@ -79,8 +79,14 @@ exports.postUpload = async (req, res) => {
   };
 
   const newFileId = await dbClient.createFile(filedoc);
-  const file = await dbClient.findFile({ _id: ObjectId(newFileId) });
-  return res.status(201).json(file);
+  return res.status(201).json({
+    id: newFileId,
+    userId,
+    name,
+    type,
+    isPublic,
+    parentId: parentId,
+  });
 };
 exports.getShow = async (req, res) => {
   const token = req.headers['x-token'];
