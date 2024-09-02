@@ -72,6 +72,12 @@ exports.postUpload = async (req, res) => {
   };
 
   const newFileId = await dbClient.createFile(filedoc);
-  const newFile = await dbClient.findFile({ _id: newFileId });
-  return res.status(201).json(newFile);
+  return res.status(201).json({
+    id: newFileId,
+    userId,
+    name,
+    type,
+    isPublic,
+    parentId: parentId,
+  });
 };
