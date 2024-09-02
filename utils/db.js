@@ -95,6 +95,73 @@ class DBClient {
       throw error;
     }
   }
+  async findAllFiles() {
+    try {
+      const db = this.client.db(this.db);
+      const collection = db.collection('files');
+      const rez = await collection.find({});
+      const docs = await rez.toArray();
+      return docs;
+    } catch (error) {
+      throw error;
+    }
+  }
+  async findFilebyParent(parentId) {
+    try {
+      const db = this.client.db(this.db);
+      const collection = db.collection('files');
+      const rez = await collection.findOne({parentId: parentId});
+      return rez;
+    } catch (error) {
+      throw error;
+    } 
+  }
+  async findFile(filters) {
+    const db = this.client.db(this.db);
+    const collection = db.collection('files');
+    const rez = await collection.findOne(filters);
+    return rez;
+  }
+  async addFolderFile(name, type, parentId, isPublic) {
+    try {
+      const db = this.client.db(this.db);
+      const collection = db.collection('files');
+      const rez = await collection.insertOne({name: name, type: type, isPublic: isPublic, parentId: parentId});
+      return rez.insertedId;
+    } catch (error) {
+      throw error;
+    }
+  }
+  async addUserId(parentId, userId) {
+    try {
+      const db = this.client.db(this.db);
+      const collection = db.collection('files');
+      const filter = { parentId: parentId };
+      const updated = { $set: { userId: userId}}
+      await collection.updateOne(filter, updated);
+    } catch (error) {
+      throw error;
+    }
+  }
+  async createFile(document) {
+    try {
+      const db = this.client.db(this.db);
+      const collection = db.collection('files');
+      const newFile = await collection.insertOne(document);
+      return newFile.insertedId;
+    } catch (error) {
+      throw error;
+    }
+  }
+  async delFiles(parentId) {
+    try {
+      const db = this.client.db(this.db);
+      const collection = db.collection('files');
+      await collection.deleteMany({ parentId: parentId });
+    } catch (error) {
+      throw error;
+    }
+  }
 }
 const dbClient = new DBClient();
 module.exports = dbClient;
