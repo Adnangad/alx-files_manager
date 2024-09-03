@@ -6,6 +6,7 @@ import { contentType } from 'mime-types';
 import fs from 'fs';
 import redisClient from '../utils/redis';
 import dbClient from '../utils/db';
+const fileQueue = require('../utils/queue');
 
 exports.postUpload = async (req, res) => {
   const token = req.headers['x-token'];
@@ -57,6 +58,7 @@ exports.postUpload = async (req, res) => {
     const file = await dbClient.findFile({ _id: ObjectId(fileId) });
     return res.status(201).json(file);
   }
+  
   const folderpath = process.env.FOLDER_PATH || '/tmp/files_manager';
   if (!fs.existsSync(folderpath)) {
     fs.mkdirSync(folderpath, { recursive: true });
@@ -81,6 +83,9 @@ exports.postUpload = async (req, res) => {
   };
 
   const newFileId = await dbClient.createFile(filedoc);
+  if (type === 'image') {
+    await fileQueue.add({ userId, fileId: newFile._id.toString() });
+  }
   return res.status(201).json({
     id: newFileId,
     userId,
@@ -236,7 +241,7 @@ exports.getFile = async (req, res) => {
     res.status(400).json({ error: "A folder doesn't have content" });
   }
   let filepath = file.localPath;
-  if (size) {
+  if (size && [500, 250, 100].includes(parseInt(size, 10))) {
     filepath = `${file.localPath}_${size}`;
   }
   if (fs.existsSync(filepath)) {
