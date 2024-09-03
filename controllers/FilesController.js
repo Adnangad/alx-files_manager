@@ -225,7 +225,7 @@ exports.getFile = async (req, res) => {
   const query = {
     _id: ObjectId(id),
   };
-  const file = dbClient.findFile(query);
+  const file = await dbClient.findFile(query);
   if (!file) {
     res.status(404).json({ error: 'Not found' });
   }
