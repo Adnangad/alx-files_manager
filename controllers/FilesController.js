@@ -212,6 +212,7 @@ exports.putUnPublish = async (req, res) => {
 
 exports.getFile = async (req, res) => {
   const token = req.headers['x-token'];
+  const size = req.query.size || null;
   if (!token) {
     res.status(401).json({ error: 'Unauthorized' });
   }
@@ -235,6 +236,9 @@ exports.getFile = async (req, res) => {
     res.status(400).json({ error: "A folder doesn't have content" });
   }
   let filepath = file.localPath;
+  if (size) {
+    filepath = `${file.localPath}_${size}`;
+  }
   if (fs.existsSync(filepath)) {
     const statz = promisify(fs.stat);
     const fileInf = await statz(filepath);
