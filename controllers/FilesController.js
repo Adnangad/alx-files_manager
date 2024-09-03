@@ -1,7 +1,9 @@
-import fs from 'fs';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import { ObjectId } from 'mongodb';
+import { promisify } from 'util';
+import { contentType } from 'mime-types';
+import fs from 'fs';
 import redisClient from '../utils/redis';
 import dbClient from '../utils/db';
 
@@ -206,4 +208,48 @@ exports.putUnPublish = async (req, res) => {
   await dbClient.update(query, upd);
   const file = await dbClient.findFile(query);
   res.status(200).json(file);
+};
+
+exports.getFile = async (req, res) => {
+  const token = req.headers['x-token'];
+  const size = req.query.size || null;
+  if (!token) {
+    res.status(401).json({ error: 'Unauthorized' });
+  }
+  const key = `auth_${token}`;
+  const userId = await redisClient.get(key);
+  if (!userId) {
+    res.status(401).json({ error: 'Unauthorized' });
+  }
+  const { id } = req.params;
+  const query = {
+    _id: ObjectId(id),
+  };
+  const file = dbClient.findFile(query);
+  if (!file) {
+    res.status(404).json({ error: 'Not found' });
+  }
+  if (file.isPublic === false && !file.userId.equals(ObjectId(userId))) {
+    res.status(404).json({ error: 'Not found' });
+  }
+  if (file.type === 'folder') {
+    res.status(400).json({ error: "A folder doesn't have content" });
+  }
+  let filepath = file.localPath;
+  if (size) {
+    filepath = `${file.localPath}_${size}`;
+  }
+  if (fs.existsSync(filepath)) {
+    const statz = promisify(fs.stat);
+    const fileInf = await statz(filepath);
+    if (!fileInf.isFile()) {
+      res.status(404).json({ error: 'Not found' });
+    }
+  } else {
+    res.status(404).json({ error: 'Not found' });
+  }
+  const realpat = promisify(fs.realpath);
+  const absolutefp = await realpat(filepath);
+  res.setHeader('Content-Type', contentType(file.name) || 'text/plain; charset=utf-8');
+  res.status(200).sendFile(absolutefp);
 };
