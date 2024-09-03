@@ -85,22 +85,75 @@ exports.postUpload = async (req, res) => {
     name,
     type,
     isPublic,
-    parentId: parentId,
+    parentId,
   });
 };
+const NULL_ID = Buffer.alloc(24, '0').toString('utf-8');
+const ROOT_FOLDER_ID = 0;
+const isValidId = (id) => ObjectId.isValid(id) && new ObjectId(id).toString() === id;
+
 exports.getShow = async (req, res) => {
   const token = req.headers['x-token'];
   if (!token) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
+
   const key = `auth_${token}`;
   const userId = await redisClient.get(key);
-  const { parentId } = req.params;
-  const files = await dbClient.findAllFiles();
-  const file = files.find((file) => file.id.toString() === parentId && file.userId.toString() === userId);
-  if (file) {
-    res.json(file);
-  } else {
-    res.status(404).json({ error: 'Not found' });
+  if (!userId) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  const id = req.params ? req.params.id : NULL_ID;
+  try {
+    const file = await dbClient.findFile({
+      _id: ObjectId(isValidId(id) ? id : NULL_ID),
+      userId: ObjectId(isValidId(userId) ? userId : NULL_ID),
+    });
+    if (file) {
+      res.status(200).json({
+        id,
+        userId,
+        name: file.name,
+        type: file.type,
+        isPublic: file.isPublic,
+        parentId: file.parentId === ROOT_FOLDER_ID.toString()
+          ? 0
+          : file.parentId.toString(),
+      });
+    } else {
+      return res.status(404).json({ error: 'Not found' });
+    }
+  } catch (error) {
+    return res.status(500).json({ error: 'Server error' });
+  }
+};
+
+exports.getIndex = async (req, res) => {
+  const token = req.headers['x-token'];
+  if (!token) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  const key = `auth_${token}`;
+  const userId = await redisClient.get(key);
+  if (!userId) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  const parentId = req.query.parentId || '0';
+  const page = parseInt(req.query.page, 10) || 0;
+  const pageSize = 20;
+
+  const matchQuery = {
+    userId: ObjectId(userId),
+    parentId: parentId === '0' ? '0' : (isValidId(parentId) ? ObjectId(parentId) : NULL_ID),
+  };
+
+  try {
+    const files = await dbClient.aggregateFiles(matchQuery, page, pageSize);
+    return res.json(files);
+  } catch (error) {
+    return res.status(500).json({ error: 'Server error' });
   }
 };
