@@ -88,10 +88,14 @@ class DBClient {
   }
 
   async findFile(filters) {
-    const db = this.client.db(this.db);
-    const collection = db.collection('files');
-    const rez = await collection.findOne();
-    return rez;
+    try {
+      const db = this.client.db(this.db);
+      const collection = db.collection('files');
+      return await collection.findOne(filters);
+    } catch (error) {
+      console.error(error);
+      throw new Error('could not find file');
+    }
   }
 
   async addFolderFile(name, type, parentId, isPublic) {
@@ -103,17 +107,16 @@ class DBClient {
     return rez.insertedId;
   }
 
-  async addUserId(parentId, userId) {
+  async update(filter, param) {
     try {
       const db = this.client.db(this.db);
       const collection = db.collection('files');
-      const filter = { parentId };
-      const updated = { $set: { userId } };
+      const updated = { $set: param };
       await collection.updateOne(filter, updated);
-    } catch (error) {
-      console.error(error);
-      throw new Error('could not update user');
-    }
+  } catch (error) {
+      console.error('Error during update operation:', error);
+      throw new Error('Could not update document');
+  }
   }
 
   async createFile(document) {
