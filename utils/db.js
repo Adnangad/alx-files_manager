@@ -90,7 +90,7 @@ class DBClient {
   async findFile(filters) {
     const db = this.client.db(this.db);
     const collection = db.collection('files');
-    const rez = await collection.findOne(filters);
+    const rez = await collection.findOne();
     return rez;
   }
 
@@ -132,6 +132,17 @@ class DBClient {
       console.error(error);
       throw new Error('could not delete file');
     }
+  }
+  async aggregateFiles(matchquery, page, pageSize) {
+    const db = this.client.db(this.db);
+    const collection = db.collection('files');
+    const files = await collection.aggregate([
+      { $match: matchquery },
+      { $sort: { _id: 1 } },
+      { $skip: page * pageSize },
+      { $limit: pageSize },
+    ]).toArray();
+    return files;
   }
 }
 const dbClient = new DBClient();
